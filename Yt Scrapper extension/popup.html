@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>YT Link Harvester</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <div class="container">
+      <!-- Header -->
+      <div class="header">
+        <span class="logo">🎬</span>
+        <h1>YT Link Harvester</h1>
+      </div>
+
+      <!-- Status Bar -->
+      <div class="status-bar">
+        <div class="status-dot" id="statusDot"></div>
+        <span id="statusText">Idle — Click Start to begin</span>
+      </div>
+
+      <!-- Counter -->
+      <div class="counter-card">
+        <span id="linkCount">0</span>
+        <label>Links Collected</label>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="controls">
+        <button id="toggleBtn" class="btn btn-primary">
+          ▶ Start Collecting
+        </button>
+
+        <!-- Export Row -->
+        <div class="export-row">
+          <button id="exportJsonBtn" class="btn btn-success" disabled>
+            ⬇ Export JSON
+          </button>
+          <button id="exportTxtBtn" class="btn btn-txt" disabled>
+            📄 Export TXT
+          </button>
+        </div>
+
+        <button id="clearBtn" class="btn btn-danger" disabled>
+          🗑 Clear All
+        </button>
+      </div>
+
+      <!-- Live Preview -->
+      <div class="preview-header">Recent Links</div>
+      <div class="links-preview" id="linksPreview">
+        <p class="empty-state">
+          No links yet. Start collecting and scroll through YouTube!
+        </p>
+      </div>
+    </div>
+    <script src="popup.js"></script>
+  </body>
+</html>
