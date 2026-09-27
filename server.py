@@ -858,5 +858,10 @@ def main():
         server.shutdown()
 
 
+# Top-level entrypoint for serverless runtimes (Vercel, AWS Lambda)
+handler = HarvesterRequestHandler
+app = HarvesterRequestHandler
+
 if __name__ == "__main__":
     main()
+

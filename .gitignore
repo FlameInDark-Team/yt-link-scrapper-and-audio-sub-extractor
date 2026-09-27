@@ -34,3 +34,5 @@ package-lock.json
 dist/
 *.crx
 *.pem
+
+.vercel
