@@ -2,15 +2,20 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>YT Link Harvester</title>
+    <title>YT Link Harvester Pro</title>
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
     <div class="container">
       <!-- Header -->
       <div class="header">
-        <span class="logo">🎬</span>
-        <h1>YT Link Harvester</h1>
+        <div class="logo-box">
+          <span class="logo">⚡</span>
+        </div>
+        <div class="header-titles">
+          <h1>YT Harvester <span class="tag">Pro</span></h1>
+          <span class="sub">Direct Studio Ingestion</span>
+        </div>
       </div>
 
       <!-- Status Bar -->
@@ -19,16 +24,30 @@
         <span id="statusText">Idle — Click Start to begin</span>
       </div>
 
-      <!-- Counter -->
+      <!-- Counter Card -->
       <div class="counter-card">
         <span id="linkCount">0</span>
         <label>Links Collected</label>
       </div>
 
-      <!-- Action Buttons -->
+      <!-- Filter Controls -->
+      <div class="filter-row">
+        <label class="checkbox-label">
+          <input type="checkbox" id="skipShortsCheckbox" />
+          <span>Skip Shorts (Long videos only)</span>
+        </label>
+      </div>
+
+      <!-- Primary Action Buttons -->
       <div class="controls">
         <button id="toggleBtn" class="btn btn-primary">
           ▶ Start Collecting
+        </button>
+
+        <!-- Direct Push to Web Studio -->
+        <button id="sendToStudioBtn" class="btn btn-studio" disabled>
+          <span id="studioSpinner" class="spinner" style="display:none;"></span>
+          🚀 Send to Download Studio
         </button>
 
         <!-- Export Row -->
@@ -41,19 +60,30 @@
           </button>
         </div>
 
-        <button id="clearBtn" class="btn btn-danger" disabled>
-          🗑 Clear All
-        </button>
+        <!-- Utility Row -->
+        <div class="export-row">
+          <button id="copyBtn" class="btn btn-copy" disabled>
+            📋 Copy All
+          </button>
+          <button id="clearBtn" class="btn btn-danger" disabled>
+            🗑 Clear
+          </button>
+        </div>
       </div>
 
       <!-- Live Preview -->
-      <div class="preview-header">Recent Links</div>
+      <div class="preview-header">
+        <span>Recent Discovered Links</span>
+      </div>
       <div class="links-preview" id="linksPreview">
         <p class="empty-state">
           No links yet. Start collecting and scroll through YouTube!
         </p>
       </div>
     </div>
+
+    <!-- Scripts -->
+    <script src="constants.js"></script>
     <script src="popup.js"></script>
   </body>
 </html>

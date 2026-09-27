@@ -1,0 +1,36 @@
+# Download outputs
+downloads/
+output/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.env
+.venv/
+venv/
+ENV/
+
+# Local configuration
+config.json
+
+# OS files
+Thumbs.db
+.DS_Store
+Desktop.ini
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Node
+node_modules/
+package-lock.json
+
+# Build output
+dist/
+*.crx
+*.pem

@@ -1,17 +1,21 @@
 {
   "manifest_version": 3,
-  "name": "YT Link Harvester",
-  "version": "1.0",
-  "description": "Extracts YouTube links from ytLockupViewModelContentImage anchor tags as you scroll.",
+  "name": "YT Link Harvester Pro",
+  "version": "2.0",
+  "description": "Smart YouTube link harvester with live DOM observer, feed filters, and instant push to local Download Studio.",
   "permissions": ["storage", "activeTab", "scripting"],
-  "host_permissions": ["https://www.youtube.com/*"],
+  "host_permissions": [
+    "https://www.youtube.com/*",
+    "http://127.0.0.1:8765/*",
+    "http://localhost:8765/*"
+  ],
   "action": {
     "default_popup": "popup.html"
   },
   "content_scripts": [
     {
       "matches": ["https://www.youtube.com/*"],
-      "js": ["content.js"]
+      "js": ["constants.js", "content.js"]
     }
   ]
 }
