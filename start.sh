@@ -9,12 +9,19 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
 echo "========================================================"
-echo "  YT Link Harvester — Download Studio"
+echo "  YT Link Harvester — Download Studio (Portable)"
 echo "========================================================"
 echo ""
 
+# Prepend local bin to PATH if present
+if [ -d "$SCRIPT_DIR/bin" ]; then
+    export PATH="$SCRIPT_DIR/bin:$PATH"
+fi
+
 # Locate Python
-if command -v python3 >/dev/null 2>&1; then
+if [ -x "$SCRIPT_DIR/python/bin/python3" ]; then
+    PY_CMD="$SCRIPT_DIR/python/bin/python3"
+elif command -v python3 >/dev/null 2>&1; then
     PY_CMD="python3"
 elif command -v python >/dev/null 2>&1; then
     PY_CMD="python"
@@ -27,7 +34,9 @@ fi
 echo "Python detected: $($PY_CMD --version)"
 
 # Check yt-dlp
-if ! command -v yt-dlp >/dev/null 2>&1 && ! $PY_CMD -m yt_dlp --version >/dev/null 2>&1; then
+if [ -x "$SCRIPT_DIR/bin/yt-dlp" ]; then
+    echo "yt-dlp detected: $SCRIPT_DIR/bin/yt-dlp"
+elif ! command -v yt-dlp >/dev/null 2>&1 && ! $PY_CMD -m yt_dlp --version >/dev/null 2>&1; then
     echo "[INFO] yt-dlp not found. Attempting user install via pip..."
     $PY_CMD -m pip install --user -r requirements.txt || true
 fi

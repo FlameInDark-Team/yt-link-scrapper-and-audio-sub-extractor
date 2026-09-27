@@ -22,9 +22,18 @@ from pathlib import Path
 DEFAULT_PORT = 8765
 DEFAULT_HOST = "127.0.0.1"
 BASE_DIR = Path(__file__).resolve().parent
+BIN_DIR = BASE_DIR / "bin"
+PYTHON_DIR = BASE_DIR / "python"
 LINKS_FILE = BASE_DIR / "links.txt"
 CONFIG_FILE = BASE_DIR / "config.json"
 UI_DIR = BASE_DIR / "ui"
+
+# Ensure portable tools and python directories are in PATH for subprocesses
+for _p in (BIN_DIR, PYTHON_DIR / "Scripts", PYTHON_DIR):
+    if _p.exists():
+        _p_str = str(_p)
+        if _p_str not in os.environ.get("PATH", "").split(os.pathsep):
+            os.environ["PATH"] = _p_str + os.pathsep + os.environ.get("PATH", "")
 
 # --- Global Download State ---
 download_state = {
@@ -43,11 +52,23 @@ active_subprocess = None
 
 
 def get_ytdlp_cmd():
-    """Detect yt-dlp command across PATH, user scripts, and python module."""
+    """Detect yt-dlp command across local bin, portable python scripts, PATH, user scripts, and python module."""
+    # 1. Local bin folder check (portable bundle)
+    for name in ("yt-dlp.exe", "yt-dlp", "ytdlp.exe", "ytdlp"):
+        local_bin = BIN_DIR / name
+        if local_bin.exists():
+            return [str(local_bin)]
+
+    # 2. Local portable python Scripts check
+    local_py_script = PYTHON_DIR / "Scripts" / "yt-dlp.exe"
+    if local_py_script.exists():
+        return [str(local_py_script)]
+
+    # 3. Check system PATH
     if shutil.which("yt-dlp"):
         return ["yt-dlp"]
 
-    # Windows user scripts directory check
+    # 4. Windows user scripts directory check
     appdata = os.environ.get("APPDATA", "")
     if appdata:
         py_ver = f"Python{sys.version_info.major}{sys.version_info.minor}"
@@ -55,13 +76,13 @@ def get_ytdlp_cmd():
         if user_script.exists():
             return [str(user_script)]
 
-    # Linux / macOS local bin check
+    # 5. Linux / macOS local bin check
     home = Path.home()
     local_bin = home / ".local" / "bin" / "yt-dlp"
     if local_bin.exists():
         return [str(local_bin)]
 
-    # Fallback to python -m yt_dlp
+    # 6. Fallback to python -m yt_dlp
     try:
         import yt_dlp  # noqa: F401
         return [sys.executable, "-m", "yt_dlp"]
@@ -71,11 +92,18 @@ def get_ytdlp_cmd():
 
 def get_ffmpeg_info():
     """Check FFmpeg availability and path."""
+    # 1. Local bin folder check (portable bundle)
+    for name in ("ffmpeg.exe", "ffmpeg"):
+        local_ffmpeg = BIN_DIR / name
+        if local_ffmpeg.exists():
+            return {"installed": True, "path": str(local_ffmpeg)}
+
+    # 2. System PATH
     ffmpeg_path = shutil.which("ffmpeg")
     if ffmpeg_path:
         return {"installed": True, "path": ffmpeg_path}
 
-    # Common Windows install locations
+    # 3. Common Windows install locations
     for candidate in [
         r"C:\ffmpeg\bin\ffmpeg.exe",
         r"C:\ffmpeg-2026-01-14\bin\ffmpeg.exe",
@@ -263,6 +291,13 @@ def download_single_item(url, config, index=None, total_count=None):
     os.makedirs(output_dir, exist_ok=True)
     ytdlp = get_ytdlp_cmd()
 
+    # Pass --ffmpeg-location if ffmpeg is available
+    ffmpeg_info = get_ffmpeg_info()
+    ffmpeg_args = []
+    if ffmpeg_info.get("installed") and ffmpeg_info.get("path"):
+        ffmpeg_bin_dir = str(Path(ffmpeg_info["path"]).parent)
+        ffmpeg_args = ["--ffmpeg-location", ffmpeg_bin_dir]
+
     prefix = f"[{index}/{total_count}] " if index and total_count else ""
     log_progress(f"{prefix}Processing: {url}")
 
@@ -290,7 +325,7 @@ def download_single_item(url, config, index=None, total_count=None):
         else:
             format_str = "bestvideo[height<=480]+bestaudio/best[height<=480]"
 
-        cmd_media = ytdlp + [
+        cmd_media = ytdlp + ffmpeg_args + [
             "-f", format_str,
             "--no-warnings",
             "-o", output_template,
@@ -298,7 +333,7 @@ def download_single_item(url, config, index=None, total_count=None):
         ]
     else:
         log_progress("  ↳ Extracting audio...")
-        cmd_media = ytdlp + [
+        cmd_media = ytdlp + ffmpeg_args + [
             "-x",
             "--no-warnings",
             "-o", output_template,
@@ -322,7 +357,7 @@ def download_single_item(url, config, index=None, total_count=None):
 
     # Step 2: Download Subtitles
     log_progress(f"  ↳ Fetching subtitles ({sub_lang})...")
-    cmd_subs = ytdlp + [
+    cmd_subs = ytdlp + ffmpeg_args + [
         "--skip-download",
         "--write-subs",
         "--write-auto-subs",
@@ -770,13 +805,30 @@ class HarvesterRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_json({"error": str(e)}, 500)
 
         elif path == "/api/update-ytdlp":
-            # Attempt upgrade via pip
+            # If standalone bin/yt-dlp exists, update it directly with -U
+            local_bin = BIN_DIR / ("yt-dlp.exe" if sys.platform == "win32" else "yt-dlp")
+            output_msg = ""
+            success = False
+            if local_bin.exists():
+                code, stdout, stderr = run_process_safe([str(local_bin), "-U"], timeout=120)
+                if code == 0:
+                    success = True
+                    output_msg = stdout.strip()
+                else:
+                    output_msg = stderr.strip()
+
+            # Also update pip package if available
             cmd = [sys.executable, "-m", "pip", "install", "--upgrade", "yt-dlp"]
-            code, stdout, stderr = run_process_safe(cmd, timeout=120)
-            success = (code == 0)
+            code_pip, stdout_pip, stderr_pip = run_process_safe(cmd, timeout=120)
+            if code_pip == 0:
+                success = True
+                output_msg = (output_msg + ("\n" if output_msg else "") + stdout_pip).strip()
+            elif not success:
+                output_msg = (output_msg + ("\n" if output_msg else "") + stderr_pip).strip()
+
             self.send_json({
                 "success": success,
-                "output": stdout.strip() if success else stderr.strip()
+                "output": output_msg or "Update completed"
             })
 
         else:
@@ -838,12 +890,22 @@ def main():
     server = http.server.HTTPServer((args.host, args.port), HarvesterRequestHandler)
     url = f"http://{args.host}:{args.port}"
 
+    ytdlp_cmd = get_ytdlp_cmd()
+    ffmpeg_info = get_ffmpeg_info()
+    is_portable_py = False
+    try:
+        is_portable_py = Path(sys.executable).resolve().is_relative_to(BASE_DIR.resolve())
+    except Exception:
+        pass
+
     print("=" * 60)
     print("  YT Link Harvester — Download Studio Engine")
     print("=" * 60)
     print(f"  Server URL   : {url}")
     print(f"  Host Platform: {sys.platform}")
-    print(f"  Python       : {sys.version.split()[0]}")
+    print(f"  Python       : {sys.version.split()[0]} ({'Portable' if is_portable_py else 'System'})")
+    print(f"  yt-dlp       : {' '.join(ytdlp_cmd)}")
+    print(f"  FFmpeg       : {ffmpeg_info['path'] if ffmpeg_info['installed'] else 'Not found'}")
     print("=" * 60)
     print("  Press Ctrl+C to terminate.")
     print("=" * 60)

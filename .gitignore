@@ -10,6 +10,8 @@ __pycache__/
 .venv/
 venv/
 ENV/
+bin/
+python/
 
 # Local configuration
 config.json

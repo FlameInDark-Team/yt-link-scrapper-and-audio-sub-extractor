@@ -23,27 +23,28 @@ A high-performance YouTube link harvester, batch audio/video downloader, and sub
 - Optional toggle to skip YouTube Shorts.
 - **Direct Studio Bridge**: Click **"Send to Download Studio"** to push discovered links directly into the running local server without manually saving files.
 
-### 3. Cross-Platform Portability
-- **Windows**: Launch with one click via `start.bat`.
-- **macOS & Linux**: Launch via `./start.sh`.
-- **Headless Terminal**: Run `downloads.bat` for standalone CLI batch processing.
+### 3. Fully Self-Contained Portability
+- **Zero Global Requirements**: The folder includes portable **Python 3.12**, **yt-dlp**, and **FFmpeg & FFprobe** directly in `python/` and `bin/`.
+- **Windows**: Double-click `start.bat` to launch the Studio anywhere (e.g. from USB drive or unzipped folder) without installing Python or FFmpeg globally.
+- **macOS & Linux**: Launch via `./start.sh` (falls back to system Python if portable package is Windows-specific).
+- **Headless Terminal**: Run `downloads.bat` for standalone CLI batch processing using the local binaries.
+- **Repair / Re-setup**: Run `setup_portable.bat` if you ever need to refresh or re-download the portable environment.
 
 ---
 
 ## Quick Start
 
-### Prerequisites
-- **Python 3.8+**
-- **yt-dlp** (`pip install -r requirements.txt`)
-- **FFmpeg** (required for audio format conversion)
+### 1. Launching the Web Studio (Portable)
 
-### 1. Launching the Web Studio
-
-#### On Windows:
-Double-click `start.bat` or run:
+#### On Windows (Zero Install Needed):
+Simply double-click `start.bat` or run in terminal:
 ```cmd
 start.bat
 ```
+`start.bat` automatically detects and uses:
+- `python\python.exe` (Portable Python runtime)
+- `bin\yt-dlp.exe` (Standalone YouTube downloader)
+- `bin\ffmpeg.exe` (Full static FFmpeg build)
 
 #### On Linux / macOS:
 ```bash
@@ -53,7 +54,7 @@ chmod +x start.sh
 
 #### Manual Python Execution:
 ```bash
-python server.py --port 8765
+python\python.exe server.py --port 8765
 ```
 The studio will launch at `http://127.0.0.1:8765` and open your default browser.
 
@@ -107,6 +108,8 @@ The local server exposes the following endpoints (with full CORS support for bro
 ## Directory Structure
 
 ```
+├── bin/                       # Portable standalone binaries (FFmpeg, FFprobe, yt-dlp)
+├── python/                    # Self-contained embedded Python 3.12 runtime with pip & yt-dlp
 ├── Yt Scrapper extension/     # Manifest V3 Chrome Extension
 │   ├── manifest.json          # Extension manifest & permissions
 │   ├── constants.js           # Shared constants & studio API configuration
@@ -122,7 +125,8 @@ The local server exposes the following endpoints (with full CORS support for bro
 ├── links.txt                  # User links queue seed file
 ├── requirements.txt           # Python dependency specifications
 ├── server.py                  # Core server & download orchestrator
-├── start.bat                  # One-click Windows launcher
+├── setup_portable.bat         # One-click portable environment installer & repair tool
+├── start.bat                  # One-click Windows launcher (Portable Edition)
 ├── start.sh                   # One-click Linux / macOS launcher
 └── .gitignore                 # Git ignore rules
 ```
